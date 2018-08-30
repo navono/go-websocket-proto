@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/url"
 	"os"
@@ -11,7 +12,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	ptypes "github.com/golang/protobuf/ptypes"
 	"github.com/gorilla/websocket"
-	"github.com/navono/go-websocket/proto"
+	"github.com/navono/go-websocket-proto/proto"
 )
 
 var addr = flag.String("addr", "localhost:9999", "http service address")
@@ -73,6 +74,8 @@ func main() {
 				Text:      *proto.String("Hi, this is message."),
 				StartTime: timestamp,
 			}
+
+			fmt.Println(time.Now().Format("2006-01-02 15:04:05"))
 
 			data, _ := proto.Marshal(msg)
 

@@ -9,7 +9,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
-	"github.com/navono/go-websocket/proto"
+	"github.com/navono/go-websocket-proto/proto"
 )
 
 var addr = flag.String("addr", "localhost:9999", "http service address")
