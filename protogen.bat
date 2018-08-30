@@ -1,6 +1,6 @@
 @echo off
 
-REM set CLIENT=%CD%\react-client\
+set REACT_CLIENT=%CD%\react-client\
 REM set SERVER=%CD%\server\
 
 REM set CLIENT_OUT=%CLIENT%proto\
@@ -35,6 +35,9 @@ REM    message.proto
 protoc ^
   -I "E:\tools\protoc\include" ^
   -I %CD%\proto ^
+  --plugin=protoc-gen-ts=%REACT_CLIENT%node_modules\.bin\protoc-gen-ts.cmd ^
   --plugin=protoc-gen-go=%GOBIN%\protoc-gen-go.exe ^
+  --js_out=import_style=commonjs,binary:%PROTO_OUT% ^
+  --ts_out=service=true:%PROTO_OUT% ^
   --go_out=%PROTO_OUT% ^
    message.proto
