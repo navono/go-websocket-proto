@@ -6,9 +6,11 @@ REM set SERVER=%CD%\server\
 REM set CLIENT_OUT=%CLIENT%proto\
 REM set SERVER_OUT=%SERVER%proto\
 set PROTO_OUT=proto\
+set PROTO_JS_OUT=%REACT_CLIENT%proto\
 
 REM mkdir %CLIENT_OUT%
 REM mkdir %SERVER_OUT%
+mkdir %PROTO_JS_OUT%
 
 if "%GOBIN%"=="" (
   if "%GOPATH%"=="" (
@@ -37,7 +39,7 @@ protoc ^
   -I %CD%\proto ^
   --plugin=protoc-gen-ts=%REACT_CLIENT%node_modules\.bin\protoc-gen-ts.cmd ^
   --plugin=protoc-gen-go=%GOBIN%\protoc-gen-go.exe ^
-  --js_out=import_style=commonjs,binary:%PROTO_OUT% ^
-  --ts_out=service=true:%PROTO_OUT% ^
+  --js_out=import_style=commonjs,binary:%PROTO_JS_OUT% ^
+  --ts_out=service=true:%PROTO_JS_OUT% ^
   --go_out=%PROTO_OUT% ^
    message.proto
