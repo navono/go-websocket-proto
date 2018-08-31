@@ -7,14 +7,18 @@ import (
 	"net/http"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+
 	"github.com/navono/go-websocket-proto/proto"
 )
 
 var addr = flag.String("addr", "localhost:9999", "http service address")
 
-var upgrader = websocket.Upgrader{} // use default options
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool { return true },
+} // use default options
 
 var data []byte
 
@@ -66,7 +70,9 @@ func main() {
 	r.HandleFunc("/echo", echoHandler)
 
 	log.Println("server listening on localhost:9999")
-	err := http.ListenAndServe(*addr, r)
+	headersContentType := handlers.AllowedHeaders([]string{"Content-Type", "Access-Control-Allow-Origin"})
+	headersContentType = handlers.AllowedOrigins([]string{"*"})
+	err := http.ListenAndServe(*addr, handlers.CORS(headersContentType)(r))
 	if err != nil {
 		log.Fatal(err)
 		return
