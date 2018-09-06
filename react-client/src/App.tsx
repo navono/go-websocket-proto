@@ -1,11 +1,11 @@
 import * as React from 'react';
 import './App.css';
 import logo from './logo.svg';
-import * as WebSocket from 'websocket';
+import WebSocketAsPromised from 'websocket-as-promised';
 import { Message } from '../proto/message_pb';
 
 class App extends React.Component {
-  private conn: WebSocket.w3cwebsocket;
+  private conn: WebSocketAsPromised;
 
   public render() {
     return (
@@ -23,62 +23,66 @@ class App extends React.Component {
     );
   }
 
-  private handleConnect = (e: any) => {
-      const W3CWebSocket = WebSocket.w3cwebsocket;
-      this.conn = new W3CWebSocket("ws://localhost:9999/echo", '', '*');
+  private packData = (data: any) => {
+    const msg = new Message();
+    const person = new Message.Person();
+    person.setId(1);
+    person.setName("ping");
+    msg.setId(data.id);
+    msg.setAuthor(person);
+    msg.setText(data.msg);
 
-      this.conn.onopen = () => {
-        // tslint:disable-next-line:no-console
-        console.log('WebSocket Client Connected');
-
-        const msg = new Message();
-        const person = new Message.Person();
-        person.setId(1);
-        person.setName("ping");
-        msg.setId(10);
-        msg.setAuthor(person);
-        msg.setText("This message come from react");
-  
-        const data = msg.serializeBinary();
-        this.conn.send(data);
-      };
-      this.conn.onerror = () => {
-        // tslint:disable-next-line:no-console
-        console.log('Connection Error');
-      };
-      // tslint:disable-next-line:no-shadowed-variable
-      this.conn.onmessage = (e: any) => {
-        // tslint:disable-next-line:no-shadowed-variable
-        this.blobToBuffer(e.data, (err: Error, buf: Buffer) => {
-          if (err !== null) {
-            return;
-          }
-
-          const msg = Message.deserializeBinary(buf)
-          // tslint:disable-next-line:no-console
-          console.log("Received: '" + msg.getText() + "'");
-        })
-     };
+    const buff = msg.serializeBinary();
+    return buff.buffer;
   };
 
-  private blobToBuffer = (blob: Blob, cb: any) => {
+  private unpackData = (data: any) => {
+    return data;
+  };
+
+  private handleMessage =  (cb: any) => async (res: any) => {
+    if (cb) {
+      const buf = await this.blobToBuffer(res);
+      const msg = Message.deserializeBinary(buf as Buffer);
+      cb(msg);
+    }
+  };
+
+  private handleConnect = async (e: any) => {
+      this.conn = new WebSocketAsPromised("ws://localhost:9999/echo", {
+        packMessage: this.packData,
+        unpackMessage: this.unpackData,
+     });
+
+      this.conn.onMessage.addListener(this.handleMessage((res: Message) => console.log(res.getText())));
+
+      await this.conn.open();
+
+      const data = "This message come from react";
+      this.conn.sendPacked({ msg: data });
+  };
+  
+  private blobToBuffer = (blob: Blob) => {
     if (typeof Blob === 'undefined' || !(blob instanceof Blob)) {
       throw new Error('first argument must be a Blob')
     }
-    if (typeof cb !== 'function') {
-      throw new Error('second argument must be a function')
-    }
+
+    return new Promise((resolve: any, reject: any) => {
+      const reader = new FileReader()
   
-    const reader = new FileReader()
-  
-    function onLoadEnd (e: any) {
-      reader.removeEventListener('loadend', onLoadEnd, false)
-      if (e.error) { cb(e.error) }
-      else { cb(null, Buffer.from(reader.result as string)) }
-    }
-  
-    reader.addEventListener('loadend', onLoadEnd, false)
-    reader.readAsArrayBuffer(blob)
+      function onLoadEnd (e: any) {
+        reader.removeEventListener('loadend', onLoadEnd, false)
+        if (e.error) { reject(e.error) }
+        else {
+          resolve(Buffer.from(reader.result as string))
+        }
+      }
+    
+      reader.addEventListener('loadend', onLoadEnd, false)
+      reader.readAsArrayBuffer(blob)
+    }).then(
+      buf => buf
+    );
   }
 
   private handleSendMsg = (e: any) => {
