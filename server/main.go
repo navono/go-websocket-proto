@@ -2,9 +2,11 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/handlers"
@@ -14,7 +16,7 @@ import (
 	"github.com/navono/go-websocket-proto/proto"
 )
 
-var addr = flag.String("addr", "localhost:9999", "http service address")
+var addr = flag.String("addr", ":9999", "http service address")
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
@@ -42,10 +44,13 @@ func echoHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		log.Printf("recv: %v", recvMsg)
 
+		var b strings.Builder
+		fmt.Fprintf(&b, "%s;%s %s", recvMsg.Text, recvMsg.Text, recvMsg.Text)
+
 		respMsg := &message.Message{
 			Id:        recvMsg.Id,
 			Author:    recvMsg.Author,
-			Text:      "Response from server",
+			Text:      b.String(),
 			StartTime: recvMsg.StartTime,
 		}
 		respData, _ := proto.Marshal(respMsg)
@@ -69,7 +74,7 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/echo", echoHandler)
 
-	log.Println("server listening on localhost:9999")
+	log.Println("server listening on *:9999")
 	headersContentType := handlers.AllowedHeaders([]string{"Content-Type", "Access-Control-Allow-Origin"})
 	headersContentType = handlers.AllowedOrigins([]string{"*"})
 	err := http.ListenAndServe(*addr, handlers.CORS(headersContentType)(r))
